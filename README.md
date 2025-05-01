@@ -112,9 +112,9 @@ docker build -t my-app .
 ---
 
 ## 📧 Contact  
-**Developer**: [Mohamed Osama]  
-**Course**: Cloud Computing & Networking  
-**Institution**: [Nile University]  
+**Developer**: **Mohamed Osama**  
+**Course**: **Cloud Computing & Networking**  
+**Institution**: **Nile University**  
 
 ---
 
