@@ -43,15 +43,23 @@ Designed for students, DevOps practitioners, and cloud computing enthusiasts.
 ## 📂 Repository Structure  
 ```bash
 .
-├── docs/                  # Documentation
-├── src/
-│   ├── main.py            # Entry point
-│   └── modules/           # Functional components
-│       ├── vm_manager/    # QEMU integration
-│       └── docker/        # Docker operations
-├── tests/                 # Unit & integration tests
-├── requirements.txt       # Python dependencies
-└── samples/               # Example configurations
+CloudManagementSystem/
+├── docs/                       # Documentation files
+├── src/                        # Source code
+│   ├── main.py                 # Application entry point
+│   └── modules/                # Core functionality modules
+│       ├── vm_manager.py       # QEMU VM lifecycle management
+│       ├── dockerfile_creator.py # Dockerfile generation
+│       ├── docker_builder.py   # Docker image building
+│       ├── docker_image_lister.py # Local image inventory
+│       ├── container_lister.py # Running container management
+│       ├── container_stopper.py # Container termination
+│       ├── image_searcher.py   # Local image search
+│       ├── dockerhub_searcher.py # DockerHub integration
+│       └── image_puller.py     # Image download utility
+├── tests/                      # Test scripts
+├── requirements.txt            # Python dependencies
+└── README.md                   # Project documentation
 ```
 
 ---
