@@ -1,101 +1,71 @@
-def run_container(parent=None, modern_askstring=None):
+import subprocess
+from PyQt5.QtWidgets import QMessageBox
+
+def run_container(parent, askstring_func):
     """
     Run a Docker container from an image.
     
     Args:
-        parent: The parent window for dialogs
-        modern_askstring: Function to display modern string input dialog
+        parent: The parent widget for dialog boxes
+        askstring_func: Function to get input from user
     """
-    import subprocess
-    from tkinter import messagebox
+    # Ask for the image name
+    image_name = askstring_func(parent, "Run Container", "Enter the image name:", "")
+    if not image_name:
+        return
     
-    # Use default dialogs if custom ones aren't provided
-    if modern_askstring is None:
-        from tkinter import simpledialog
-        modern_askstring = simpledialog.askstring
+    # Ask for the container name
+    container_name = askstring_func(parent, "Run Container", "Enter a name for the container (optional):", "")
     
-    if parent is None:
-        import tkinter as tk
-        parent = tk._default_root
+    # Ask for ports to map (format: host_port:container_port)
+    port_mapping = askstring_func(parent, "Run Container", "Enter port mapping (e.g., 8080:80) (optional):", "")
+    
+    # Ask for environment variables
+    env_vars = askstring_func(parent, "Run Container", "Enter environment variables (KEY=VALUE,KEY2=VALUE2) (optional):", "")
+    
+    # Build the docker run command
+    cmd = ["docker", "run", "-d"]
+    
+    # Add container name if provided
+    if container_name:
+        cmd.extend(["--name", container_name])
+    
+    # Add port mapping if provided
+    if port_mapping:
+        ports = port_mapping.split(",")
+        for port in ports:
+            if port.strip():
+                cmd.extend(["-p", port.strip()])
+    
+    # Add environment variables if provided
+    if env_vars:
+        env_list = env_vars.split(",")
+        for env in env_list:
+            if env.strip():
+                cmd.extend(["-e", env.strip()])
+    
+    # Add the image name
+    cmd.append(image_name)
     
     try:
-        # Get the image name
-        image_name = modern_askstring(parent, "Run Container", "Enter the image name:")
-        if not image_name:
-            return
-            
-        # Get container name (optional)
-        container_name = modern_askstring(parent, "Container Name", "Enter container name (optional):")
-        
-        # Get port mappings (optional)
-        port_mapping = modern_askstring(parent, "Port Mapping", "Enter port mapping (e.g., 8080:80) (optional):")
-        
-        # Get environment variables (optional)
-        env_vars = modern_askstring(parent, "Environment Variables", "Enter environment variables (e.g., VAR1=value1,VAR2=value2) (optional):")
-        
-        # Get volume mappings (optional)
-        volume_mapping = modern_askstring(parent, "Volume Mapping", "Enter volume mapping (e.g., /host/path:/container/path) (optional):")
-        
-        # Get detach mode
-        detach_mode = messagebox.askyesno("Detach Mode", "Run container in detached mode?")
-        
-        # Build the docker run command
-        command = ["docker", "run"]
-        
-        # Add detach flag if selected
-        if detach_mode:
-            command.append("-d")
-        
-        # Add container name if provided
-        if container_name:
-            command.extend(["--name", container_name])
-        
-        # Add port mapping if provided
-        if port_mapping:
-            command.extend(["-p", port_mapping])
-        
-        # Add environment variables if provided
-        if env_vars:
-            for env_var in env_vars.split(","):
-                if "=" in env_var:
-                    command.extend(["-e", env_var.strip()])
-        
-        # Add volume mapping if provided
-        if volume_mapping:
-            command.extend(["-v", volume_mapping])
-        
-        # Add the image name
-        command.append(image_name)
-        
-        # Show starting message in output area
-        if hasattr(parent, "update_output"):
-            parent.update_output(f"Starting container from image '{image_name}'...\n\nCommand: {' '.join(command)}")
-        
-        # Run the container
-        result = subprocess.run(command, capture_output=True, text=True)
+        # Execute the docker run command
+        result = subprocess.run(cmd, capture_output=True, text=True)
         
         if result.returncode == 0:
             container_id = result.stdout.strip()
-            success_message = f"Container started successfully.\nContainer ID: {container_id}"
+            output_text = f"Container started successfully!\n\nContainer ID: {container_id}"
             
-            # Show success message in output area
-            if hasattr(parent, "update_output"):
-                parent.update_output(success_message)
+            # Get additional container information
+            inspect_cmd = ["docker", "inspect", "--format='{{.Name}} - {{.NetworkSettings.IPAddress}}'", container_id]
+            inspect_result = subprocess.run(inspect_cmd, capture_output=True, text=True)
+            
+            if inspect_result.returncode == 0:
+                output_text += f"\nContainer details: {inspect_result.stdout.strip()}"
                 
-            messagebox.showinfo("Success", success_message)
+            parent.update_output(output_text)
         else:
-            error_message = f"Failed to start container:\n{result.stderr}"
-            
-            # Show error message in output area
-            if hasattr(parent, "update_output"):
-                parent.update_output(error_message)
-                
-            messagebox.showerror("Error", error_message)
+            parent.update_output(f"Failed to start container:\n{result.stderr}")
+            QMessageBox.warning(parent, "Container Error", f"Failed to start container:\n{result.stderr}")
     except Exception as e:
-        error_message = f"Failed to run container:\n{e}"
-        
-        # Show error message in output area
-        if hasattr(parent, "update_output"):
-            parent.update_output(error_message)
-            
-        messagebox.showerror("Error", error_message)
+        parent.update_output(f"Error running container: {str(e)}")
+        QMessageBox.critical(parent, "Error", f"Error running container: {str(e)}")
